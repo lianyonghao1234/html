@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/js/jquery-3.3.1.min.js"></script>
+    <!-- 加载 Bootstrap 的所有 JavaScript 插件。你也可以根据需要只加载单个插件。 -->
+    <script src="/js/bootstrap3/js/bootstrap.min.js"></script>
+    <script src="/js/DataTables/DataTables-1.10.18/js/jquery.dataTables.js"></script>
+    <script src="/js/DataTables/DataTables-1.10.18/js/dataTables.bootstrap.min.js"></script>
+    <script src="/js/bootstrap-datetimepicker/js/moment-with-locales.js"></script>
+    <script src="/js/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="/js/bootbox/bootbox.min.js"></script>
+    <script src="/js/fileinput5/js/fileinput.js"></script>
+    <script src="/js/fileinput5/js/locales/zh.js"></script>
+    <script src="/js/bootstrap-validator/js/bootstrapValidator.min.js"></script>
+    <link rel="stylesheet" href="/js/bootstrap3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/js/DataTables/DataTables-1.10.18/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" href="/js/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" href="/js/fileinput5/css/fileinput.css">
+    <link rel="stylesheet" href="/js/bootstrap-validator/css/bootstrapValidator.min.css">
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-primary" >
+                <!-- Default panel contents -->
+                <div class="panel-heading" style="text-align: left">
+                    <button type="button" class="btn btn-success" onclick="location.href='add.html'"><i class="glyphicon glyphicon-plus"></i>添加游戏</button>
+                </div>
+                <div  class="panel-body">
+                    <!-- Table -->
+                    <table id="example" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                        <tr >
+                            <th>游戏序号</th>
+                            <th>游戏名称</th>
+                            <th>游戏余额</th>
+                            <th>登录账号</th>
+                            <th>登录时间</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>游戏序号</th>
+                            <th>游戏名称</th>
+                            <th>游戏余额</th>
+                            <th>登录账号</th>
+                            <th>登录时间</th>
+                            <th>操作</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="showUpdateDiv">
+<div>
+    <form class="form-horizontal" >
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">游戏名称</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" id="update_name" >
+            </div>
+        </div>
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">游戏余额</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" id="update_price" >
+            </div>
+        </div>
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">登录账号</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control" id="update_login" >
+            </div>
+        </div>
+        <div class="form-group">
+            <label  class="col-sm-2 control-label">登录时间</label>
+            <div class="col-sm-4">
+                <input type="text" name="createDate" id="update_time" class="form-control "  >
+            </div>
+        </div>
+    </form>
+</div>
+</script>
+
+<script>
+    $(function(){
+        initDateTable();
+    })
+    function queryList(){
+        $("#example").dataTable().fnDraw(false);//点击事件触发table重新请求服务器
+    }
+    function initDateTable(){
+        myTable =$('#example').DataTable({
+            "serverSide": true,
+            // 是否允许检索
+            "searching": false,
+            "lengthMenu": [5, 10, 20,50],
+            "ajax": {
+                url: 'http://localhost:8080/game/queryList',
+                type: 'POST',
+                //用于处理服务器端返回的数据。 dataSrc是DataTable特有的
+                dataSrc: function (result) {
+                    if (result.status==200) {
+                        result.draw = result.data.draw;
+                        result.recordsTotal = result.data.recordsTotal;
+                        result.recordsFiltered = result.data.recordsFiltered;
+                        return result.data.data;
+                    }else{
+                        return "";
+                    }
+
+                }
+            },
+            "columns": [
+                {"data":"id"},
+                { "data": "name"},
+                { "data": "price"},
+                { "data": "login"},
+                { "data": "time",
+                    render:function (data,type,row,meta) {
+                        return new Date(data).toLocaleDateString();
+                    }},
+                {"data":"id",render:function(data,type,row,meta){
+                        return ' <div class="btn-group" role="group" aria-label="...">'+
+                            '<button type="button" class="btn btn-info" onclick="toUpdate('+data+')"><i class="glyphicon glyphicon-wrench"></i>修改</button>'+
+                            '<button type="button" class="btn btn-danger" onclick="deletes('+data+')"><i class="glyphicon glyphicon-remove"></i>删除</button>'+
+                            '</div>';
+                    }}
+
+            ],
+            "initComplete":function (setting,json) {
+            },
+            "drawCallback": function( settings ) {
+            },
+            "language": {
+                "sProcessing":   "处理中...",
+                "sLengthMenu":   "_MENU_ 记录/页",
+                "sZeroRecords":  "没有匹配的记录",
+                "sInfo":         "显示第 _START_ 至 _END_ 项记录，共 _TOTAL_ 项",
+                "sInfoEmpty":    "显示第 0 至 0 项记录，共 0 项",
+                "sInfoFiltered": "(由 _MAX_ 项记录过滤)",
+                "sInfoPostFix":  "",
+                "sSearch":       "过滤:",
+                "sUrl":          "",
+                "oPaginate": {
+                    "sFirst":    "首页",
+                    "sPrevious": "上页",
+                    "sNext":     "下页",
+                    "sLast":     "末页"
+                }
+            }
+        });
+    }
+    function deletes(id){
+        $.post(
+            "http://localhost:8080/game/deletes",
+            {"id":id},
+            function (data) {
+                if(data.status==200){
+                    queryList();
+                }
+            }
+        )
+    }
+
+
+
+
+    function toUpdate(id){
+        window.event.stopPropagation()// 阻止冒泡
+        bootbox.dialog({
+            message: $("#showUpdateDiv").html(),
+            title: "修改",
+            buttons: {
+                Cancel: {
+                    label: "取消",
+                    className: "btn-default",
+                    callback: function () {
+                    }
+                }
+                , OK: {
+                    label: "确认",
+                    className: "btn-danger",
+                    callback: function () {
+                        var param={};
+                        param.name=$("#update_name").val();
+                        param.price=$("#update_price").val();
+                        param.login=$("#update_login").val();
+                        param.time=$("#update_time").val();
+                        param.id=id;
+                        $.post(
+                            "http://localhost:8080/game/update",
+                            param,
+                            function (data) {
+                                if(data.status==200){
+                                    queryList();
+                                }else{
+                                    bootbox.alert("操作失败！,请联系管理员",function(){
+
+                                    })
+                                }
+
+                            }
+                        )
+                    }
+                }
+            }
+        });
+        $.post(
+            "http://localhost:8080/game/toupdate",
+            {"id":id},
+            function (result) {
+                if(result.status==200){
+                    var data=result.data;
+                    $("#update_name").val(data.name);
+                    $("#update_price").val(data.price);
+                    $("#update_login").val(data.login);
+                    $("#update_time").val(new Date(data.time).toLocaleDateString());
+                    initUpdateDate();
+                }
+            }
+        )
+    }
+
+    function initUpdateDate(){
+        $('#update_time').datetimepicker({
+            format: 'YYYY-MM-DD',
+            locale: 'zh-CN'
+
+        });
+    }
+    function mohu() {
+        var JsonData={};
+        var name = $("#mohu_name").val();
+        var mintime = $("#mintime").val();
+        var maxtime = $("#maxtime").val();
+        JsonData.name=name;
+        JsonData.mintime=mintime;
+        JsonData.maxtime=maxtime;
+        myTable.settings()[0].ajax.data=JsonData;
+        myTable.ajax.reload();
+    }
+</script>
+游戏名称:<input type="text" id="mohu_name"><br>
+登录时间:<input type="date" id="mintime">----><input type="date" id="maxtime"><br>
+<input type="button" value="模糊查询" onclick="mohu()">
+</body>
+</html>

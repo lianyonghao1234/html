@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/js/vue/vue.min.js"></script>
+    <script src="/js/vue/axios.min.js"></script>
+    <script src="/js/vue/qs.js"></script>
+</head>
+<body>
+<div id="app">
+    <button @click="toadd">添加信息</button>
+
+        <table border="1">
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>ID</td>
+                <td>姓名</td>
+                <td>性别</td>
+                <td>年龄</td>
+                <td>操作</td>
+            </tr>
+            <tr v-for="(item,index) in list":key="index" >
+                <td><input type="checkbox"></td>
+                <td>{{item.id}}</td>
+                <td>{{item.name}}</td>
+                <td>{{item.sex==1?"男":"女"}}</td>
+                <td>{{item.age}}</td>
+                <td>
+                    <button @click="deletes(item.id)">删除</button>
+                    <button @click="toupdate(item)">修改</button>
+                </td>
+            </tr>
+        </table>
+
+    <div v-if="tjxs">
+        名称<input v-model="name" />
+        性别<input type="radio" value="1" v-model="sex"/>男
+            <input type="radio" value="2" v-model="sex"/>女
+        年龄<input v-model="age"/>
+        <input type="button"  @click="add" value="提交"/>
+    </div>
+
+    <div v-if="up">
+        名称<input v-model="name" />
+        性别<input type="radio" value="1" v-model="sex"/>男
+        <input type="radio" value="2" v-model="sex"/>女
+        年龄<input v-model="age"/>
+        <input type="button"  @click="update" value="修改"/>
+    </div>
+</div>
+<script>
+var vm=new Vue({
+    el:'#app',
+    data:{
+        tjxs:false,
+        up:false,
+        id:'',
+        name:'',
+        sex:'',
+        age:'',
+        list:[],
+    },
+        created(){//当vm 实例 初始化 data和 methods 后，会自动执行这个生命周期函数,
+            //执行完查询方法后，vm实例会继续编译模板，这时候已经有数据了
+            this.queryList()//调用查询方法
+            this.tjxs=false;
+            this.up=false;
+        },
+        methods: {//方法区
+            queryList() {
+                var bbb = this;
+                axios.get("http://localhost:8080/user/queryList").then(function (re) {
+                    console.log(re.data)//控制台输出返回的信息，查看
+                    //re是个对象，获取的数据都在data中
+                    var aaa = re.data;
+                    if (aaa.status == 200) {
+                        bbb.list = aaa.data;
+                    } else {
+                        alert("失败了");
+                    }
+                })
+            },
+            toadd() {
+                //显示添加框
+                this.tjxs = true;
+            },
+            add(){//添加方法
+                //用post请求 发送数据,发送的是对象，
+                //1.URL,请求路径，2.要交给服务器的数据,3.配置一个对象，以哪种form表单格式发送,4.成功回调函数
+                var bbb=this;
+                axios.post("http://localhost:8080/user/add",Qs.stringify({name:bbb.name,sex:bbb.sex,age:bbb.age})).then(function(re){
+                    //re是个对象，用 $http 获取的数据，都在body中放着，也可以用 re.data  也是获取数据，
+                    var re=re.data;
+                    //判断是否成功
+                    if(re.status==200){
+                        alert("数据添加成功");
+                        bbb.queryList();
+                    }else{
+                        alert("数据添加错误");
+                    }
+                })
+                //清空数据
+                this.name=this.sex=this.age='';
+                //隐藏添加框
+                this.tjxs=false;
+            },
+            deletes(id){
+                var bbb=this;
+                axios.post("http://localhost:8080/user/deletes",Qs.stringify({id:id})).then(function (re) {
+                    var re=re.data;
+                    if(re.status==200){
+                        alert("数据删除成功");
+                        bbb.queryList();
+                    }else{
+                        alert("数据删除错误");
+                    }
+                })
+            },
+            toupdate(data){
+                //如果添加框显示，就隐藏
+                this.tjxs=false;
+                //显示修改框
+                this.up=true;
+                //通过双向数据绑定，让修改框获得你要修改的值
+                this.id=data.id;
+                this.name=data.name;
+                this.age=data.age;
+                this.sex=data.sex;
+            },
+            update(){
+                //判断性别被选中的是哪个
+                var bbb=this;
+                axios.post("http://localhost:8080/user/update",Qs.stringify({id:bbb.id,name:bbb.name,sex:bbb.sex,age:bbb.age})).then(function(re){
+                    //re是个对象，获取的数据都在data中
+                    var re=re.data;
+                    //判断是否成功
+                    if(re.status==200){
+                        alert("数据修改成功");
+                        bbb.queryList();
+                    }else{
+                        alert("数据修改错误");
+                    }
+                })
+                //清空数据
+                this.id=this.name=this.sex=this.age='';
+                //隐藏添加框
+                this.up=false;
+            }
+        },
+})
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/js/vue/vue.min.js"></script>
+    <script src="/js/vue/axios.min.js"></script>
+    <script src="/js/vue/qs.js"></script>
+</head>
+<body>
+<div id="app">
+    <button @click="toadd">添加信息</button>
+        <table border="1px">
+            <tr>
+                <td>id</td>
+                <td>name</td>
+                <td>sex</td>
+                <td>age</td>
+                <td>操作</td>
+            </tr>
+            <tr v-for="(item,index) in list">
+                <td>{{item.id}}</td>
+                <td>{{item.name}}</td>
+                <td>{{item.sex==1?"男":"女"}}</td>
+                <td>{{item.age}}</td>
+                <td>
+                    <button @click="deletes(item.id)" >删除</button>
+                   <button @click="toupdate(item)">修改</button>
+                </td>
+            </tr>
+        </table>
+    <div  v-if="tjxs">
+        名称<input v-model="name" />
+        性别<input type="radio" value="1" v-model="sex" />男
+             <input type="radio" value="2" v-model="sex" />女
+        年龄<input v-model="age"/>
+        <input type="button"  @click="add" value="提交"/>
+    </div>
+     <div v-if="updates">
+         名称<input v-model="name"/>
+         性别<input type="radio" value="1" v-model="sex"/>男
+         <input type="radio" value="2" v-model="sex"/>女
+         年龄<input v-model="age"/>
+         <input type="button"  @click="update" value="修改" />
+     </div>
+</div>
+<script>
+var vm=new Vue({
+    el:'#app',
+    data:{
+        tjxs:false,
+        updates:false,
+        id:'',
+        name:'',
+        sex:'',
+        age:'',
+        list:[]
+        },
+        created(){//当vm 实例 初始化 data和 methods 后，会自动执行这个生命周期函数,
+        //执行完查询方法后，vm实例会继续编译模板，这时候已经有数据了
+            this.queryList()
+            this.tjxs=false;
+            this.updates=false;
+        },
+        methods:{//方法区
+            queryList(){
+            var bbb=this;
+            axios.get("http://localhost:8080/user/queryList").then(function(re){
+                var data = re.data;
+                if(data.status==200){
+                    bbb.list=data.data;
+                }else {
+                    alert("失败！")
+                }
+            })
+        },
+        toadd(){
+            this.tjxs=true;//这里的this.tjxs指向的就是data中的tjxs，添加div会显示出来
+        },
+        add(){
+                var bbb=this;
+                axios.post("http://localhost:8080/user/add",Qs.stringify({name:bbb.name,sex:bbb.sex,age:bbb.age})).then(function(re){
+                    var data = re.data;
+                    if(data.status==200){
+                        alert("新增成功");
+                         bbb.queryList();
+                    }else {
+                        alert("新增失败！")
+                    }
+                })
+        },
+        deletes(id){
+            var bbb=this;
+            axios.post("http://localhost:8080/user/deletes",Qs.stringify({id:id})).then(function(re){
+                var data = re.data;
+                if(data.status==200){
+                    alert("删除成功");
+                    bbb.queryList();
+                }else {
+                    alert("删除失败！")
+                }
+            })
+        },
+        toupdate(data){
+            this.tjxs=false;
+            this.updates=true;
+           this.id=data.id;
+           this.name=data.name;
+           this.sex=data.sex;
+           this.age=data.age;
+        },
+         //通过v-model 获取要修改的数据和下标
+        update(){
+            var bbb=this;
+            axios.post("http://localhost:8080/user/update",Qs.stringify({id:bbb.id,name:bbb.name,sex:bbb.sex,age:bbb.age})).then(function(re){
+                var data = re.data;
+                if(data.status==200){
+                    alert("修改成功");
+                    bbb.queryList();
+                }else {
+                    alert("修改失败！")
+                }
+            })
+        }
+        }
+})
+</script>
+</body>
+</html>
